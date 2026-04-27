@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="assets/header.jpg" alt="faktura" width="320" />
+  <img src="assets/header.jpg" alt="faktura" width="100%" />
 </p>
-
-# faktura
 
 Node.js/TypeScript製の小さな請求書発行CLIです。
 
 自然言語から請求書ドラフトを作成し、YAMLを確認・編集したうえでPDFを生成し、必要に応じてGoogle Driveへアップロードします。取引先、請求書、Google Drive URLはSQLiteで管理します。
 
 ## セットアップ
+
+Node.jsは `22.x` LTSを推奨します。`better-sqlite3` の都合で、Node.js `21.x` は非推奨です。
 
 ベータ版としてGitHubから直接インストールする場合は以下です。
 
@@ -28,31 +28,6 @@ fak
 
 ```bash
 nodenv rehash
-```
-
-まだnpm registryへ公開していない場合は、このリポジトリ直下で以下を実行すると `fak` コマンドで起動できます。
-
-```bash
-npm install
-npm run build
-npm install -g .
-fak
-```
-
-開発中に変更をすぐ反映したい場合は `npm link` でも使えます。
-
-```bash
-npm install
-npm run build
-npm link
-fak
-```
-
-npmへ公開後は以下でインストールできます。
-
-```bash
-npm install -g faktura
-fak
 ```
 
 PDF生成にはPlaywrightのChromiumが必要です。初回に以下を実行してください。
