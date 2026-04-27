@@ -1,0 +1,38 @@
+{
+  "name": "invoice-generator",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "invoice": "dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx src/cli.ts",
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "check": "tsc --noEmit",
+    "install:browsers": "playwright install chromium"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^12.9.0",
+    "commander": "^14.0.3",
+    "date-fns": "^4.1.0",
+    "dotenv": "^17.4.2",
+    "enquirer": "^2.4.1",
+    "googleapis": "^171.4.0",
+    "handlebars": "^4.7.9",
+    "openai": "^6.34.0",
+    "playwright": "^1.59.1",
+    "yaml": "^2.8.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.3"
+  }
+}

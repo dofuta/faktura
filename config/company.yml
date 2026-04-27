@@ -1,0 +1,15 @@
+name: "株式会社watatsumi"
+postalCode: "152-0042"
+address: "東京都目黒区青葉台3-3-11 みどり荘 2F"
+email: "t.dofuku@wata-tsumi.com"
+phone: ""
+registrationNumber: "T2137052120410026"
+invoiceNotes: |
+  ※振込日が土日祝日の場合には、その前の最終銀行営業日までにお振込ください。
+  ※恐れ入りますが振込手数料はお客様のご負担でお願いいたします。
+bank:
+  name: GMOあおぞらネット銀行
+  branch: "法人営業部(101)"
+  accountType: "普通"
+  accountNumber: "1670606"
+  accountHolder: カ）ワタツミ

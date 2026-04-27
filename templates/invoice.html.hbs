@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>INVOICE {{invoiceNumber}}</title>
+    <style>
+      body {
+        color: #111;
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+        font-size: 12px;
+        line-height: 1.6;
+        margin: 20px;
+      }
+
+      h1 {
+        font-size: 28px;
+        letter-spacing: 0.2em;
+        text-align: center;
+      }
+
+      table {
+        border-collapse: collapse;
+        margin-top: 24px;
+        width: 100%;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+
+      th {
+        background: #f5f5f5;
+        text-align: left;
+      }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 48px;
+      }
+
+      .box {
+        flex: 1;
+      }
+
+      .right {
+        text-align: right;
+      }
+
+      .total {
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .summary-row {
+        align-items: stretch;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 16px;
+      }
+
+      .summary-card {
+        border: 1px solid #ddd;
+        flex: 1;
+        padding: 8px 10px;
+      }
+
+      .amount-card {
+        border-left: 0;
+        flex: 0 0 240px;
+        text-align: right;
+      }
+
+      .summary-label {
+        color: #555;
+        display: block;
+        font-size: 11px;
+        font-weight: 400;
+        margin-bottom: 4px;
+      }
+
+      .amount-value {
+        display: block;
+        font-size: 18px;
+        font-weight: 700;
+      }
+
+      .muted {
+        color: #555;
+      }
+
+      .notes {
+        margin-top: 24px;
+      }
+
+      .subject {
+        font-size: 14px;
+      }
+
+      .bank-box {
+        background: #fafafa;
+        border: 1px solid #ddd;
+        margin-top: 20px;
+        padding: 10px 12px;
+      }
+
+      .bank-box p {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>INVOICE</h1>
+
+    <div class="row">
+      <div class="box">
+        <p>
+          <strong>{{draft.client.name}} 御中</strong><br />
+          {{draft.client.address}}<br />
+          {{draft.client.email}}
+        </p>
+      </div>
+      <div class="box right">
+        <p>
+          請求番号: {{invoiceNumber}}<br />
+          発行日: {{draft.issueDate}}<br />
+          支払期限: {{draft.dueDate}}
+        </p>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="box">
+        <p>
+          <strong>{{company.name}}</strong><br />
+          {{company.postalCode}} {{company.address}}<br />
+          {{company.email}} {{company.phone}}<br />
+          {{#if company.registrationNumber}}登録番号: {{company.registrationNumber}}{{/if}}
+        </p>
+      </div>
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-card subject">
+        <span class="summary-label">件名</span>
+        {{#if draft.title}}{{draft.title}}{{else}}-{{/if}}
+      </div>
+      <div class="summary-card amount-card">
+        <span class="summary-label">ご請求金額</span>
+        <span class="amount-value">{{formatYen totals.total}}</span>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>品目</th>
+          <th class="right">単価</th>
+          <th class="right">数量</th>
+          <th class="right">税率</th>
+          <th class="right">小計</th>
+          <th class="right">税額</th>
+          <th class="right">合計</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each totals.items}}
+          <tr>
+            <td>{{description}}</td>
+            <td class="right">{{formatYen unitPrice}}</td>
+            <td class="right">{{quantity}}</td>
+            <td class="right">{{formatPercent taxRate}}</td>
+            <td class="right">{{formatYen subtotal}}</td>
+            <td class="right">{{formatYen taxAmount}}</td>
+            <td class="right">{{formatYen total}}</td>
+          </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    <table>
+      <tbody>
+        <tr>
+          <th>小計</th>
+          <td class="right">{{formatYen totals.subtotal}}</td>
+        </tr>
+        <tr>
+          <th>消費税</th>
+          <td class="right">{{formatYen totals.taxAmount}}</td>
+        </tr>
+        <tr>
+          <th>合計</th>
+          <td class="right total">{{formatYen totals.total}}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    {{#if company.bank}}
+      <div class="bank-box">
+        <p>
+          <strong>振込先</strong><br />
+          {{company.bank.name}} {{company.bank.branch}} {{company.bank.accountType}}
+          {{company.bank.accountNumber}} {{company.bank.accountHolder}}
+        </p>
+      </div>
+    {{/if}}
+
+    <div class="notes muted">
+      {{#if draft.notes}}
+        <p><strong>備考</strong><br />{{lineBreaks draft.notes}}</p>
+      {{/if}}
+
+      {{#if company.invoiceNotes}}
+        <p>{{lineBreaks company.invoiceNotes}}</p>
+      {{/if}}
+    </div>
+  </body>
+</html>
