@@ -8,6 +8,7 @@ import { runDraftCommand } from "./commands/draft.js";
 import { runDraftsCommand } from "./commands/drafts.js";
 import { runGenerateCommand } from "./commands/generate.js";
 import { runInvoicesCommand } from "./commands/invoices.js";
+import { runSettingsCommand } from "./commands/settings.js";
 import { select } from "./utils/prompts.js";
 
 const program = new Command();
@@ -27,6 +28,7 @@ async function runMainMenu(): Promise<void> {
       { name: "drafts", message: "📋 請求書ドラフト一覧", value: runDraftsCommand },
       { name: "draft", message: "✍️ 請求書ドラフトを作成する", value: runCreateDraftAndOpenList },
       { name: "invoices", message: "🧾 請求書一覧", value: runInvoicesCommand },
+      { name: "settings", message: "⚙️ 設定・保存場所", value: runSettingsCommand },
     ]);
 
     await withDatabase(action);
@@ -41,8 +43,8 @@ async function runCreateDraftAndOpenList(db: Awaited<ReturnType<typeof openDatab
 }
 
 program
-  .name("invoice")
-  .description("対話式の請求書発行CLI")
+  .name("fak")
+  .description("faktura - 対話式の請求書発行CLI")
   .version("0.1.0");
 
 program.action(runMainMenu);
@@ -66,6 +68,11 @@ program
   .command("invoices")
   .description("請求書一覧を開く")
   .action(() => withDatabase(runInvoicesCommand));
+
+program
+  .command("settings")
+  .description("設定状態と保存場所を表示する")
+  .action(() => withDatabase(runSettingsCommand));
 
 program
   .command("clients")

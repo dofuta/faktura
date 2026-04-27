@@ -1,8 +1,10 @@
 import path from "node:path";
 import type Database from "better-sqlite3";
+import { loadEnv } from "../config/env.js";
 import { loadCompany } from "../config/company.js";
 import { invoiceNumberExists, listInvoices, saveInvoice } from "../db/repositories.js";
 import { uploadPdfToDrive } from "../integrations/googleDrive.js";
+import { getGoogleDriveStatus } from "../integrations/googleDriveConfig.js";
 import { reserveInvoiceNumber } from "../invoice/numbering.js";
 import { renderInvoiceHtml } from "../invoice/renderHtml.js";
 import { renderPdfFromHtml } from "../invoice/renderPdf.js";
@@ -111,7 +113,8 @@ async function buildDraftChoices(db: Database.Database, draftFiles: string[]) {
 }
 
 export async function runGenerateCommand(db: Database.Database): Promise<void> {
-  const draftFiles = await listFiles(path.resolve(process.cwd(), "drafts"), [".yml", ".yaml", ".json"]);
+  const env = loadEnv();
+  const draftFiles = await listFiles(env.draftsDir, [".yml", ".yaml", ".json"]);
   if (draftFiles.length === 0) {
     console.log("生成できるドラフトがありません。");
     return;
@@ -133,8 +136,7 @@ export async function generateFromDraftPath(db: Database.Database, draftPath: st
   const totals = calculateTotals(draft);
   const invoiceNumber = resolveInvoiceNumber(db, draftPath, draft.issueDate);
   const pdfPath = path.resolve(
-    process.cwd(),
-    "output",
+    loadEnv().outputDir,
     buildPdfFileName(draft.issueDate, draft.client.name, draft.client.language),
   );
 
@@ -163,7 +165,10 @@ export async function generateFromDraftPath(db: Database.Database, draftPath: st
 
   let googleDriveFileId: string | undefined;
   let googleDriveUrl: string | undefined;
-  if (await confirm("Google Driveへアップロードしますか", true)) {
+  const driveStatus = await getGoogleDriveStatus();
+  if (!driveStatus.enabled) {
+    console.log("Google Driveは未設定のためスキップしました。");
+  } else if (await confirm("Google Driveへアップロードしますか", true)) {
     const uploaded = await uploadPdfToDrive(pdfPath);
     googleDriveFileId = uploaded.fileId;
     googleDriveUrl = uploaded.webViewLink;

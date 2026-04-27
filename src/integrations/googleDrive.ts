@@ -13,7 +13,7 @@ export type DriveUploadResult = {
   webViewLink: string;
 };
 
-const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive"];
+const DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.file"];
 
 async function createDriveClient() {
   const env = loadEnv();

@@ -1,6 +1,7 @@
 import path from "node:path";
 import type Database from "better-sqlite3";
 import { addMonths, format, lastDayOfMonth } from "date-fns";
+import { loadEnv } from "../config/env.js";
 import type { Client } from "../db/schema.js";
 import { listClients } from "../db/repositories.js";
 import { generateDraftWithOpenAi } from "../integrations/openai.js";
@@ -72,7 +73,7 @@ export async function runDraftCommand(db: Database.Database): Promise<boolean> {
   });
 
   const invoiceNumber = reserveInvoiceNumber(db, new Date(draft.issueDate));
-  const draftPath = path.resolve(process.cwd(), "drafts", buildDraftFileName(invoiceNumber));
+  const draftPath = path.resolve(loadEnv().draftsDir, buildDraftFileName(invoiceNumber));
   await writeInvoiceDraft(draftPath, draft);
   console.log(`ドラフトを保存しました: ${draftPath}`);
 

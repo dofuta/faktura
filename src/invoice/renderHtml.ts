@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import Handlebars from "handlebars";
 import type { Company } from "../config/company.js";
 import type { InvoiceDraft } from "./schema.js";
@@ -21,7 +22,10 @@ Handlebars.registerHelper("lineBreaks", (value: string) => {
 });
 
 export async function renderInvoiceHtml(context: InvoiceRenderContext): Promise<string> {
-  const templatePath = path.resolve(process.cwd(), "templates/invoice.html.hbs");
+  const templatePath = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "../../templates/invoice.html.hbs",
+  );
   const template = await readFile(templatePath, "utf8");
   return Handlebars.compile(template)(context);
 }

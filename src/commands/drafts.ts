@@ -1,6 +1,7 @@
 import { unlink } from "node:fs/promises";
 import path from "node:path";
 import type Database from "better-sqlite3";
+import { loadEnv } from "../config/env.js";
 import { listInvoices } from "../db/repositories.js";
 import { generateFromDraftPath } from "./generate.js";
 import { readInvoiceDraft } from "../invoice/schema.js";
@@ -79,7 +80,7 @@ async function buildDraftChoices(db: Database.Database, draftFiles: string[]): P
 }
 
 async function selectDraft(db: Database.Database): Promise<string | undefined> {
-  const draftFiles = await listFiles(path.resolve(process.cwd(), "drafts"), [".yml", ".yaml", ".json"]);
+  const draftFiles = await listFiles(loadEnv().draftsDir, [".yml", ".yaml", ".json"]);
   if (draftFiles.length === 0) {
     console.log("ドラフトはありません。");
     return undefined;

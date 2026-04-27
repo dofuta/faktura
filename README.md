@@ -1,4 +1,8 @@
-# Invoice Generator
+<p align="center">
+  <img src="assets/header.jpg" alt="faktura" width="320" />
+</p>
+
+# faktura
 
 Node.js/TypeScript製の小さな請求書発行CLIです。
 
@@ -6,15 +10,94 @@ Node.js/TypeScript製の小さな請求書発行CLIです。
 
 ## セットアップ
 
+ベータ版としてGitHubから直接インストールする場合は以下です。
+
 ```bash
-npm install
-npm run install:browsers
-cp .env.example .env
+npm install -g git+ssh://git@github.com:dofuta/invoice-generator.git
+fak
 ```
 
-PDF生成にはPlaywrightのChromiumが必要です。`browserType.launch: Executable doesn't exist` が出た場合も、`npm run install:browsers` を実行してください。
+ブランチを指定する場合:
 
-`config/company.yml` に自社情報と振込先を設定してください。
+```bash
+npm install -g git+ssh://git@github.com:dofuta/invoice-generator.git#main
+fak
+```
+
+`nodenv` を使っていて `fak: command not found` になる場合は、以下を実行してください。
+
+```bash
+nodenv rehash
+```
+
+まだnpm registryへ公開していない場合は、このリポジトリ直下で以下を実行すると `fak` コマンドで起動できます。
+
+```bash
+npm install
+npm run build
+npm install -g .
+fak
+```
+
+開発中に変更をすぐ反映したい場合は `npm link` でも使えます。
+
+```bash
+npm install
+npm run build
+npm link
+fak
+```
+
+npmへ公開後は以下でインストールできます。
+
+```bash
+npm install -g faktura
+fak
+```
+
+PDF生成にはPlaywrightのChromiumが必要です。初回に以下を実行してください。
+
+```bash
+npx playwright install chromium
+```
+
+`browserType.launch: Executable doesn't exist` が出た場合も、同じコマンドを実行してください。
+
+## 保存場所
+
+設定とデータは、macOS/Linuxの標準的なアプリ用ディレクトリに保存します。正確なパスはCLIの `⚙️ 設定・保存場所` から確認できます。
+
+macOSの例:
+
+```text
+~/Library/Preferences/faktura/
+  .env
+  company.yml
+  google-oauth-client.json
+  google-oauth-token.json
+
+~/Library/Application Support/faktura/
+  invoices.db
+  drafts/
+  output/
+```
+
+Linuxの例:
+
+```text
+~/.config/faktura/
+  .env
+  company.yml
+  google-oauth-client.json
+  google-oauth-token.json
+
+~/.local/share/faktura/
+  invoices.db
+  drafts/
+  output/
+```
+
+設定フォルダの `company.yml` に自社情報と振込先を設定してください。
 
 `.env` には以下を設定します。
 
@@ -22,15 +105,15 @@ PDF生成にはPlaywrightのChromiumが必要です。`browserType.launch: Execu
 OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 GOOGLE_AUTH_MODE=oauth
-GOOGLE_OAUTH_CLIENT_PATH=./config/google-oauth-client.json
-GOOGLE_OAUTH_TOKEN_PATH=./config/google-oauth-token.json
 GOOGLE_DRIVE_FOLDER_ID=
-DATABASE_PATH=./data/invoices.db
-COMPANY_CONFIG_PATH=./config/company.yml
 PDF_PREVIEW_BROWSER=
 ```
 
-## Google認証情報
+`GOOGLE_OAUTH_CLIENT_PATH`、`DATABASE_PATH`、`COMPANY_CONFIG_PATH` などは通常不要です。指定しない場合は上記のOS標準ディレクトリを使います。
+
+## Google Drive連携
+
+Google Drive連携は任意です。未設定でもPDF生成とSQLite保存は使えます。未設定の場合、PDF生成時のGoogle Driveアップロード確認は表示されません。
 
 個人のGoogle Driveへアップロードする場合はOAuthを使います。
 
@@ -44,6 +127,8 @@ PDF_PREVIEW_BROWSER=
 8. 初回アップロード時にブラウザが開くので、Google Driveへのアクセスを許可します。取得したトークンは `config/google-oauth-token.json` に保存されます。
 
 フォルダURLが `https://drive.google.com/drive/folders/abc123...` の場合、`abc123...` がフォルダIDです。
+
+現在の設定状態はCLIの `⚙️ 設定・保存場所` から確認できます。
 
 共有ドライブでサービスアカウントを使う場合だけ、`.env` に `GOOGLE_AUTH_MODE=service_account` と `GOOGLE_APPLICATION_CREDENTIALS=./config/google-service-account.json` を設定してください。サービスアカウントは通常の個人My Driveには保存容量を持たないため、My Driveへの直接アップロードには向きません。
 
@@ -78,25 +163,24 @@ bank:
 
 ## 使い方
 
-開発中は以下でCLIを起動します。
+通常は以下でCLIを起動します。
 
 ```bash
-npm run dev
+fak
 ```
 
 起動後に、CLI上で「何をするか」を選択します。通常操作ではCLIを終了せず、各画面の `↩️ トップに戻る` でトップメニューへ戻ります。
 
-ビルド後は以下です。
+開発中は以下でも起動できます。
 
 ```bash
-npm run build
-node dist/cli.js
+npm run dev
 ```
 
 ## コマンド
 
 ```bash
-npm run dev
+fak
 ```
 
 最初にアイコン付きのメニューが表示されます。
@@ -104,6 +188,7 @@ npm run dev
 - `📋 請求書ドラフト一覧`: `drafts/` 配下のドラフトを選択し、生成・編集・削除を行います。
 - `✍️ 請求書ドラフトを作成する`: 取引先を検索選択し、請求内容を自然文で入力してドラフトYAMLを作成します。作成後はドラフト一覧に戻ります。
 - `🧾 請求書一覧`: SQLiteに保存済みの請求書を新しい順に表示し、プレビュー・Finderで表示・削除を行います。
+- `⚙️ 設定・保存場所`: OpenAI/Google Driveの設定状態と、DB・会社情報・ドラフト・出力先を確認します。
 
 ドラフト一覧では、`title` があれば件名を表示し、空の場合だけファイル名を表示します。`SQLite保存済み`、`Drive保存済み` のドラフトは下の方に薄く表示されます。
 
@@ -137,11 +222,11 @@ notes: ""
 
 ## ファイル配置
 
-- `config/company.yml`: 自社情報と振込先
-- `data/invoices.db`: SQLiteデータベース
-- `drafts/`: 請求書ドラフト
-- `output/`: 生成PDF
-- `templates/invoice.html.hbs`: 請求書HTMLテンプレート
+- 設定フォルダの `company.yml`: 自社情報と振込先
+- データフォルダの `invoices.db`: SQLiteデータベース
+- データフォルダの `drafts/`: 請求書ドラフト
+- データフォルダの `output/`: 生成PDF
+- npm package内の `templates/invoice.html.hbs`: 請求書HTMLテンプレート
 
 ## 確認
 

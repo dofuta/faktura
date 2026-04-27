@@ -1,5 +1,9 @@
-import "dotenv/config";
-import path from "node:path";
+import dotenv from "dotenv";
+import { getAppPaths, resolvePath } from "./paths.js";
+
+const appPaths = getAppPaths();
+dotenv.config({ path: appPaths.envFilePath, quiet: true });
+dotenv.config({ quiet: true });
 
 export type AppEnv = {
   openAiApiKey?: string;
@@ -12,11 +16,12 @@ export type AppEnv = {
   databasePath: string;
   companyConfigPath: string;
   pdfPreviewBrowser?: string;
+  configDir: string;
+  dataDir: string;
+  draftsDir: string;
+  outputDir: string;
+  envFilePath: string;
 };
-
-function resolveProjectPath(value: string): string {
-  return path.isAbsolute(value) ? value : path.resolve(process.cwd(), value);
-}
 
 export function loadEnv(): AppEnv {
   return {
@@ -24,17 +29,22 @@ export function loadEnv(): AppEnv {
     openAiModel: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
     googleAuthMode: process.env.GOOGLE_AUTH_MODE === "service_account" ? "service_account" : "oauth",
     googleApplicationCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS
-      ? resolveProjectPath(process.env.GOOGLE_APPLICATION_CREDENTIALS)
-      : undefined,
-    googleOAuthClientPath: resolveProjectPath(
-      process.env.GOOGLE_OAUTH_CLIENT_PATH ?? "./config/google-oauth-client.json",
+      ? resolvePath(process.env.GOOGLE_APPLICATION_CREDENTIALS)
+      : appPaths.googleServiceAccountPath,
+    googleOAuthClientPath: resolvePath(
+      process.env.GOOGLE_OAUTH_CLIENT_PATH ?? appPaths.googleOAuthClientPath,
     ),
-    googleOAuthTokenPath: resolveProjectPath(
-      process.env.GOOGLE_OAUTH_TOKEN_PATH ?? "./config/google-oauth-token.json",
+    googleOAuthTokenPath: resolvePath(
+      process.env.GOOGLE_OAUTH_TOKEN_PATH ?? appPaths.googleOAuthTokenPath,
     ),
     googleDriveFolderId: process.env.GOOGLE_DRIVE_FOLDER_ID,
-    databasePath: resolveProjectPath(process.env.DATABASE_PATH ?? "./data/invoices.db"),
-    companyConfigPath: resolveProjectPath(process.env.COMPANY_CONFIG_PATH ?? "./config/company.yml"),
+    databasePath: resolvePath(process.env.DATABASE_PATH ?? appPaths.databasePath),
+    companyConfigPath: resolvePath(process.env.COMPANY_CONFIG_PATH ?? appPaths.companyConfigPath),
     pdfPreviewBrowser: process.env.PDF_PREVIEW_BROWSER,
+    configDir: appPaths.configDir,
+    dataDir: appPaths.dataDir,
+    draftsDir: resolvePath(process.env.DRAFTS_DIR ?? appPaths.draftsDir),
+    outputDir: resolvePath(process.env.OUTPUT_DIR ?? appPaths.outputDir),
+    envFilePath: appPaths.envFilePath,
   };
 }

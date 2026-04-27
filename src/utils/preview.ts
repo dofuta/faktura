@@ -38,6 +38,15 @@ export async function revealInFinder(filePath: string): Promise<void> {
   await openWithMacOS(["-R", filePath]);
 }
 
+export async function openPath(filePath: string): Promise<void> {
+  if (process.platform !== "darwin") {
+    console.log(filePath);
+    return;
+  }
+
+  await openWithMacOS([filePath]);
+}
+
 async function openWithMacOS(args: string[]): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const child = spawn("open", args, { stdio: "ignore" });

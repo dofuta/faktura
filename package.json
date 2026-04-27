@@ -1,27 +1,40 @@
 {
-  "name": "invoice-generator",
+  "name": "faktura",
   "version": "1.0.0",
-  "description": "",
+  "description": "Interactive invoice PDF generator CLI with SQLite and optional Google Drive upload.",
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
-    "invoice": "dist/cli.js"
+    "fak": "dist/cli.js"
   },
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsc",
     "start": "node dist/cli.js",
     "check": "tsc --noEmit",
-    "install:browsers": "playwright install chromium"
+    "install:browsers": "playwright install chromium",
+    "prepack": "npm run build",
+    "prepare": "npm run build"
   },
   "author": "",
   "license": "ISC",
+  "engines": {
+    "node": ">=20 <26"
+  },
+  "files": [
+    "dist/",
+    "assets/",
+    "templates/",
+    ".env.example",
+    "README.md"
+  ],
   "dependencies": {
     "better-sqlite3": "^12.9.0",
     "commander": "^14.0.3",
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.2",
     "enquirer": "^2.4.1",
+    "env-paths": "^4.0.0",
     "googleapis": "^171.4.0",
     "handlebars": "^4.7.9",
     "openai": "^6.34.0",
