@@ -2,7 +2,7 @@
 import { Command } from "commander";
 import { closeDb } from "./db/client.js";
 import { openDatabase } from "./db/index.js";
-import { runClientsCommand } from "./commands/clients.js";
+import { runClientsCommand, runCreateClientCommand } from "./commands/clients.js";
 import { runDeleteInvoiceCommand } from "./commands/deleteInvoice.js";
 import { runDraftCommand } from "./commands/draft.js";
 import { runDraftsCommand } from "./commands/drafts.js";
@@ -12,8 +12,10 @@ import { runSettingsCommand } from "./commands/settings.js";
 import { select } from "./utils/prompts.js";
 
 const program = new Command();
+type DatabaseAction = (db: Awaited<ReturnType<typeof openDatabase>>) => Promise<unknown>;
+type MainMenuAction = DatabaseAction | "exit";
 
-async function withDatabase(action: (db: Awaited<ReturnType<typeof openDatabase>>) => Promise<unknown>): Promise<void> {
+async function withDatabase(action: DatabaseAction): Promise<void> {
   const db = await openDatabase();
   try {
     await action(db);
@@ -24,12 +26,19 @@ async function withDatabase(action: (db: Awaited<ReturnType<typeof openDatabase>
 
 async function runMainMenu(): Promise<void> {
   while (true) {
-    const action = await select("何をしますか", [
-      { name: "drafts", message: "📋 請求書ドラフト一覧", value: runDraftsCommand },
-      { name: "draft", message: "✍️ 請求書ドラフトを作成する", value: runCreateDraftAndOpenList },
-      { name: "invoices", message: "🧾 請求書一覧", value: runInvoicesCommand },
-      { name: "settings", message: "⚙️ 設定・保存場所", value: runSettingsCommand },
+    const action = await select<MainMenuAction>("何をしますか", [
+      { name: "drafts", shortcut: "d", message: "📋 請求書ドラフト一覧", value: runDraftsCommand },
+      { name: "draft", shortcut: "n", message: "✍️ 請求書ドラフトを作成する", value: runCreateDraftAndOpenList },
+      { name: "invoices", shortcut: "i", message: "🧾 請求書一覧", value: runInvoicesCommand },
+      { name: "clients", shortcut: "c", message: "🏢 取引先一覧", value: runClientsCommand },
+      { name: "client", shortcut: "a", message: "➕ 取引先作成", value: runCreateClientCommand },
+      { name: "settings", shortcut: "s", message: "⚙️ 設定・保存場所", value: runSettingsCommand },
+      { name: "exit", shortcut: "q", message: "終了する", value: "exit" },
     ]);
+
+    if (action === "exit") {
+      return;
+    }
 
     await withDatabase(action);
   }
@@ -76,8 +85,13 @@ program
 
 program
   .command("clients")
-  .description("取引先を一覧・追加・編集する")
+  .description("取引先を一覧・プレビュー・編集・削除する")
   .action(() => withDatabase(runClientsCommand));
+
+program
+  .command("client")
+  .description("取引先を作成する")
+  .action(() => withDatabase(runCreateClientCommand));
 
 program
   .command("delete")

@@ -5,8 +5,37 @@ const { AutoComplete, Confirm, Input, Select } = enquirer;
 export type PromptChoice<T> = {
   name: string;
   message?: string;
+  shortcut?: string;
   value: T;
 };
+
+type ShortcutSelectPrompt = {
+  dispatch(inputValue: string, key: { name?: string }): Promise<unknown> | unknown;
+  index: number;
+  submit(): Promise<unknown>;
+  run(): Promise<unknown>;
+};
+
+function displayChoicesWithShortcuts<T>(choices: Array<PromptChoice<T>>): Array<PromptChoice<T>> {
+  return choices.map((choice) => ({
+    ...choice,
+    message: choice.shortcut ? `[${choice.shortcut.toUpperCase()}] ${choice.message ?? choice.name}` : choice.message,
+  }));
+}
+
+function applyShortcutDispatch<T>(prompt: ShortcutSelectPrompt, choices: Array<PromptChoice<T>>): void {
+  const originalDispatch = prompt.dispatch.bind(prompt);
+  prompt.dispatch = async (inputValue: string, key: { name?: string } = {}) => {
+    const shortcut = (key.name ?? inputValue).toLowerCase();
+    const index = choices.findIndex((choice) => choice.shortcut?.toLowerCase() === shortcut);
+    if (index === -1) {
+      return originalDispatch(inputValue, key);
+    }
+
+    prompt.index = index;
+    return prompt.submit();
+  };
+}
 
 export async function input(message: string, initial = ""): Promise<string> {
   return new Input({ name: "value", message, initial }).run();
@@ -27,13 +56,17 @@ export async function confirm(message: string, initial = true): Promise<boolean>
 }
 
 export async function select<T>(message: string, choices: Array<PromptChoice<T>>): Promise<T> {
-  const result = await new Select<T>({
+  const prompt = new Select<T>({
     name: "value",
     message,
-    choices,
-  }).run();
+    choices: displayChoicesWithShortcuts(choices),
+  }) as unknown as ShortcutSelectPrompt;
 
-  return resolveChoiceValue(result, choices);
+  applyShortcutDispatch(prompt, choices);
+
+  const result = await prompt.run();
+
+  return resolveChoiceValue(result as T | string, choices);
 }
 
 export async function autocomplete<T>(
@@ -41,10 +74,10 @@ export async function autocomplete<T>(
   choices: Array<PromptChoice<T>>,
   limit = 8,
 ): Promise<T> {
-  const result = await new AutoComplete<T>({
+  const prompt = new AutoComplete<T>({
     name: "value",
     message,
-    choices,
+    choices: displayChoicesWithShortcuts(choices),
     limit,
     suggest: async (inputValue, availableChoices) => {
       const query = inputValue.trim().toLowerCase();
@@ -57,9 +90,12 @@ export async function autocomplete<T>(
         return haystack.includes(query);
       });
     },
-  }).run();
+  }) as unknown as ShortcutSelectPrompt;
 
-  return resolveChoiceValue(result, choices);
+  applyShortcutDispatch(prompt, choices);
+  const result = await prompt.run();
+
+  return resolveChoiceValue(result as T | string, choices);
 }
 
 function resolveChoiceValue<T>(result: T | string, choices: Array<PromptChoice<T>>): T {
@@ -67,7 +103,9 @@ function resolveChoiceValue<T>(result: T | string, choices: Array<PromptChoice<T
     return result;
   }
 
-  const selected = choices.find((choice) => choice.name === result || choice.message === result);
+  const selected = choices.find(
+    (choice) => choice.name === result || choice.message === result || choice.value === result,
+  );
   if (!selected) {
     throw new Error(`Unknown selection: ${result}`);
   }

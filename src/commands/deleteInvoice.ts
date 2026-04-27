@@ -24,7 +24,7 @@ export async function runDeleteInvoiceCommand(db: Database.Database): Promise<vo
         value: item,
       };
     }),
-    { name: BACK, message: "↩️ トップに戻る", value: BACK },
+    { name: BACK, shortcut: "b", message: "↩️ トップに戻る", value: BACK },
   ]);
   if (invoice === BACK) {
     return;

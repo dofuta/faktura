@@ -122,7 +122,7 @@ export async function runGenerateCommand(db: Database.Database): Promise<void> {
 
   const draftPath = await select<string | typeof BACK>("生成するドラフトを選択してください", [
     ...(await buildDraftChoices(db, draftFiles)),
-    { name: BACK, message: "↩️ トップに戻る", value: BACK, priority: Number.MAX_SAFE_INTEGER },
+    { name: BACK, shortcut: "b", message: "↩️ トップに戻る", value: BACK },
   ]);
   if (draftPath === BACK) {
     return;

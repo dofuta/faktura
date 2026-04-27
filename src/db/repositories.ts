@@ -121,6 +121,17 @@ export function updateClient(db: Database.Database, id: number, input: NewClient
   return mapClient(row);
 }
 
+export function countClientInvoices(db: Database.Database, clientId: number): number {
+  const row = db
+    .prepare("SELECT COUNT(*) AS count FROM invoices WHERE client_id = ?")
+    .get(clientId) as { count: number };
+  return row.count;
+}
+
+export function deleteClient(db: Database.Database, id: number): void {
+  db.prepare("DELETE FROM clients WHERE id = ?").run(id);
+}
+
 export function getClient(db: Database.Database, id: number): Client | undefined {
   const row = db.prepare("SELECT * FROM clients WHERE id = ?").get(id) as ClientRow | undefined;
   return row ? mapClient(row) : undefined;

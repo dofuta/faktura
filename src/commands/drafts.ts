@@ -89,7 +89,7 @@ async function selectDraft(db: Database.Database): Promise<string | undefined> {
   const choices = await buildDraftChoices(db, draftFiles);
   const selected = await select("請求書ドラフトを選択してください", [
     ...choices,
-    { name: BACK, message: "↩️ トップに戻る", value: BACK, priority: Number.MAX_SAFE_INTEGER },
+    { name: BACK, shortcut: "b", message: "↩️ トップに戻る", value: BACK },
   ]);
 
   return selected === BACK ? undefined : selected;
@@ -121,7 +121,7 @@ export async function runDraftsCommand(db: Database.Database): Promise<void> {
       { name: "generate", message: "📄 生成", value: "generate" as const },
       { name: "edit", message: "✏️ 編集", value: "edit" as const },
       { name: "delete", message: "🗑️ 削除", value: "delete" as const },
-      { name: "back", message: "↩️ トップに戻る", value: "back" as const },
+      { name: "back", shortcut: "b", message: "↩️ トップに戻る", value: "back" as const },
     ]);
 
     if (action === "back") {

@@ -8,6 +8,7 @@ import { generateDraftWithOpenAi } from "../integrations/openai.js";
 import { buildDraftFileName, reserveInvoiceNumber } from "../invoice/numbering.js";
 import { writeInvoiceDraft } from "../invoice/schema.js";
 import { openInEditor } from "../utils/editor.js";
+import { startProgress } from "../utils/progress.js";
 import { confirm, autocomplete, input, requiredInput } from "../utils/prompts.js";
 import { promptNewClient } from "./clients.js";
 
@@ -35,6 +36,7 @@ async function selectClientPrompt(db: Database.Database): Promise<Client | undef
     },
     {
       name: "↩️ トップに戻る",
+      shortcut: "b",
       message: "↩️ トップに戻る",
       value: BACK as ClientSelection,
     },
@@ -58,19 +60,32 @@ export async function runDraftCommand(db: Database.Database): Promise<boolean> {
   }
 
   const naturalLanguage = await requiredInput("請求内容を自然文で入力してください");
-  const title = await input("件名");
   const issueDate = await input("発行日", format(new Date(), "yyyy-MM-dd"));
   const dueDate = await input("支払期限", defaultDueDate());
   const notes = await input("備考");
 
-  const draft = await generateDraftWithOpenAi({
-    client,
-    naturalLanguage,
-    title,
-    issueDate,
-    dueDate,
-    notes,
-  });
+  const progress = startProgress("OpenAIとの通信を開始します");
+  let draft;
+  try {
+    draft = await generateDraftWithOpenAi(
+      {
+        client,
+        naturalLanguage,
+        issueDate,
+        dueDate,
+        notes,
+      },
+      {
+        onProgress: (event) => {
+          progress.update(event.message);
+        },
+      },
+    );
+    progress.stop("OpenAIのドラフト生成が完了しました");
+  } catch (error) {
+    progress.stop("OpenAIのドラフト生成に失敗しました");
+    throw error;
+  }
 
   const invoiceNumber = reserveInvoiceNumber(db, new Date(draft.issueDate));
   const draftPath = path.resolve(loadEnv().draftsDir, buildDraftFileName(invoiceNumber));

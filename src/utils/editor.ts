@@ -1,10 +1,15 @@
 import { spawn } from "node:child_process";
 
+function quoteShellArg(value: string): string {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
 export async function openInEditor(filePath: string): Promise<void> {
   const editor = process.env.EDITOR ?? process.env.VISUAL ?? "vi";
+  const command = `${editor} ${quoteShellArg(filePath)}`;
 
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(editor, [filePath], {
+    const child = spawn(command, {
       stdio: "inherit",
       shell: true,
     });
@@ -16,7 +21,7 @@ export async function openInEditor(filePath: string): Promise<void> {
         return;
       }
 
-      reject(new Error(`${editor} exited with code ${code ?? "unknown"}`));
+      reject(new Error(`${command} exited with code ${code ?? "unknown"}`));
     });
   });
 }

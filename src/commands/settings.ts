@@ -5,7 +5,7 @@ import { ensureDir } from "../utils/files.js";
 import { openPath } from "../utils/preview.js";
 import { select } from "../utils/prompts.js";
 
-type SettingsAction = "show" | "open-config" | "open-data" | "back";
+type SettingsAction = "show" | "open-config" | "open-data" | "open-drafts" | "open-output" | "back";
 
 async function showSettings(): Promise<void> {
   const env = loadEnv();
@@ -34,7 +34,9 @@ export async function runSettingsCommand(_db: Database.Database): Promise<void> 
       { name: "show", message: "⚙️ 設定状態を表示", value: "show" },
       { name: "open-config", message: "📁 設定フォルダをFinderで開く", value: "open-config" },
       { name: "open-data", message: "📁 データフォルダをFinderで開く", value: "open-data" },
-      { name: "back", message: "↩️ トップに戻る", value: "back" },
+      { name: "open-drafts", message: "📁 ドラフトフォルダをFinderで開く", value: "open-drafts" },
+      { name: "open-output", message: "📁 出力フォルダをFinderで開く", value: "open-output" },
+      { name: "back", shortcut: "b", message: "↩️ トップに戻る", value: "back" },
     ]);
 
     if (action === "back") {
@@ -57,6 +59,20 @@ export async function runSettingsCommand(_db: Database.Database): Promise<void> 
       const env = loadEnv();
       await ensureDir(env.dataDir);
       await openPath(env.dataDir);
+      continue;
+    }
+
+    if (action === "open-drafts") {
+      const env = loadEnv();
+      await ensureDir(env.draftsDir);
+      await openPath(env.draftsDir);
+      continue;
+    }
+
+    if (action === "open-output") {
+      const env = loadEnv();
+      await ensureDir(env.outputDir);
+      await openPath(env.outputDir);
     }
   }
 }

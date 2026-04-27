@@ -27,7 +27,7 @@ async function selectInvoice(db: Database.Database): Promise<InvoiceRecord | und
       message: invoiceLabel(invoice),
       value: invoice,
     })),
-    { name: BACK, message: "↩️ トップに戻る", value: BACK },
+    { name: BACK, shortcut: "b", message: "↩️ トップに戻る", value: BACK },
   ]);
 
   return selected === BACK ? undefined : selected;
@@ -53,7 +53,7 @@ export async function runInvoicesCommand(db: Database.Database): Promise<void> {
       { name: "preview", message: "👀 プレビュー", value: "preview" as const },
       { name: "finder", message: "📁 Finderで表示", value: "finder" as const },
       { name: "delete", message: "🗑️ 削除", value: "delete" as const },
-      { name: "back", message: "↩️ トップに戻る", value: "back" as const },
+      { name: "back", shortcut: "b", message: "↩️ トップに戻る", value: "back" as const },
     ]);
 
     if (action === "back") {
