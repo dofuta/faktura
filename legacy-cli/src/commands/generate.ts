@@ -11,7 +11,7 @@ import { renderPdfFromHtml } from "../invoice/renderPdf.js";
 import { readInvoiceDraft } from "../invoice/schema.js";
 import { calculateTotals, formatYen } from "../invoice/totals.js";
 import { confirm, select } from "../utils/prompts.js";
-import { listFiles } from "../utils/files.js";
+import { getFileMtimeMs, listFiles } from "../utils/files.js";
 import { openPdfPreview, toFileUrl } from "../utils/preview.js";
 
 const ANSI_DIM = "\x1b[2m";
@@ -81,6 +81,7 @@ async function buildDraftChoices(db: Database.Database, draftFiles: string[]) {
       });
       const isSavedToSqlite = savedInvoices.length > 0;
       const isSavedToDrive = savedInvoices.some((invoice) => Boolean(invoice.googleDriveFileId || invoice.googleDriveUrl));
+      const mtimeMs = await getFileMtimeMs(file);
       const statuses = [
         isSavedToSqlite ? "SQLite保存済み" : undefined,
         isSavedToDrive ? "Drive保存済み" : undefined,
@@ -96,6 +97,7 @@ async function buildDraftChoices(db: Database.Database, draftFiles: string[]) {
           message: priority > 0 ? dim(label) : label,
           value: file,
           priority,
+          mtimeMs,
         };
       } catch {
         const label = `${relativePath}${statuses.length ? ` (${statuses.join(" / ")})` : ""}`;
@@ -104,12 +106,13 @@ async function buildDraftChoices(db: Database.Database, draftFiles: string[]) {
           message: priority > 0 ? dim(label) : label,
           value: file,
           priority,
+          mtimeMs,
         };
       }
     }),
   );
 
-  return choices.sort((a, b) => a.priority - b.priority || a.message.localeCompare(b.message, "ja"));
+  return choices.sort((a, b) => a.priority - b.priority || b.mtimeMs - a.mtimeMs);
 }
 
 export async function runGenerateCommand(db: Database.Database): Promise<void> {

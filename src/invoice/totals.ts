@@ -1,6 +1,11 @@
-import type { InvoiceDraft, InvoiceItem } from "./schema.js";
+export type InvoiceItemInput = {
+  description: string;
+  unitPrice: number;
+  quantity: number;
+  taxRate: number;
+};
 
-export type InvoiceItemTotal = InvoiceItem & {
+export type InvoiceItemTotal = InvoiceItemInput & {
   subtotal: number;
   taxAmount: number;
   total: number;
@@ -17,7 +22,7 @@ function roundYen(value: number): number {
   return Math.round(value);
 }
 
-export function calculateItemTotal(item: InvoiceItem): InvoiceItemTotal {
+export function calculateItemTotal(item: InvoiceItemInput): InvoiceItemTotal {
   const subtotal = roundYen(item.unitPrice * item.quantity);
   const taxAmount = roundYen(subtotal * item.taxRate);
 
@@ -29,21 +34,21 @@ export function calculateItemTotal(item: InvoiceItem): InvoiceItemTotal {
   };
 }
 
-export function calculateTotals(draft: InvoiceDraft): InvoiceTotals {
-  const items = draft.items.map(calculateItemTotal);
-  const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
-  const taxAmount = items.reduce((sum, item) => sum + item.taxAmount, 0);
+export function calculateTotals(items: InvoiceItemInput[]): InvoiceTotals {
+  const itemTotals = items.map(calculateItemTotal);
+  const subtotal = itemTotals.reduce((sum, item) => sum + item.subtotal, 0);
+  const taxAmount = itemTotals.reduce((sum, item) => sum + item.taxAmount, 0);
 
   return {
-    items,
+    items: itemTotals,
     subtotal,
     taxAmount,
     total: subtotal + taxAmount,
   };
 }
 
-export function formatYen(value: number): string {
-  return new Intl.NumberFormat("ja-JP", {
+export function formatYen(value: number, language: "ja" | "en" = "ja"): string {
+  return new Intl.NumberFormat(language === "en" ? "en-US" : "ja-JP", {
     style: "currency",
     currency: "JPY",
     maximumFractionDigits: 0,

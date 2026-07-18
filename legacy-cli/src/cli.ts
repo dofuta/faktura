@@ -12,7 +12,10 @@ import { runSettingsCommand } from "./commands/settings.js";
 import { select } from "./utils/prompts.js";
 
 const program = new Command();
+const BACK = "__back__";
+
 type DatabaseAction = (db: Awaited<ReturnType<typeof openDatabase>>) => Promise<unknown>;
+type MenuAction = DatabaseAction | typeof BACK;
 type MainMenuAction = DatabaseAction | "exit";
 
 async function withDatabase(action: DatabaseAction): Promise<void> {
@@ -27,12 +30,10 @@ async function withDatabase(action: DatabaseAction): Promise<void> {
 async function runMainMenu(): Promise<void> {
   while (true) {
     const action = await select<MainMenuAction>("何をしますか", [
-      { name: "drafts", shortcut: "d", message: "📋 請求書ドラフト一覧", value: runDraftsCommand },
-      { name: "draft", shortcut: "n", message: "✍️ 請求書ドラフトを作成する", value: runCreateDraftAndOpenList },
-      { name: "invoices", shortcut: "i", message: "🧾 請求書一覧", value: runInvoicesCommand },
-      { name: "clients", shortcut: "c", message: "🏢 取引先一覧", value: runClientsCommand },
-      { name: "client", shortcut: "a", message: "➕ 取引先作成", value: runCreateClientCommand },
-      { name: "settings", shortcut: "s", message: "⚙️ 設定・保存場所", value: runSettingsCommand },
+      { name: "drafts", shortcut: "d", message: "📋 ドラフト", value: runDraftMenu },
+      { name: "invoices", shortcut: "i", message: "🧾 請求書", value: runInvoiceMenu },
+      { name: "clients", shortcut: "c", message: "🏢 取引先", value: runClientMenu },
+      { name: "settings", shortcut: "s", message: "⚙️ 設定", value: runSettingsCommand },
       { name: "exit", shortcut: "q", message: "終了する", value: "exit" },
     ]);
 
@@ -41,6 +42,53 @@ async function runMainMenu(): Promise<void> {
     }
 
     await withDatabase(action);
+  }
+}
+
+async function runDraftMenu(db: Awaited<ReturnType<typeof openDatabase>>): Promise<void> {
+  while (true) {
+    const action = await select<MenuAction>("ドラフト", [
+      { name: "list", shortcut: "l", message: "一覧", value: runDraftsCommand },
+      { name: "create", shortcut: "n", message: "作成", value: runCreateDraftAndOpenList },
+      { name: BACK, shortcut: "b", message: "↩️ 戻る", value: BACK },
+    ]);
+
+    if (action === BACK) {
+      return;
+    }
+
+    await action(db);
+  }
+}
+
+async function runInvoiceMenu(db: Awaited<ReturnType<typeof openDatabase>>): Promise<void> {
+  while (true) {
+    const action = await select<MenuAction>("請求書", [
+      { name: "list", shortcut: "l", message: "一覧", value: runInvoicesCommand },
+      { name: BACK, shortcut: "b", message: "↩️ 戻る", value: BACK },
+    ]);
+
+    if (action === BACK) {
+      return;
+    }
+
+    await action(db);
+  }
+}
+
+async function runClientMenu(db: Awaited<ReturnType<typeof openDatabase>>): Promise<void> {
+  while (true) {
+    const action = await select<MenuAction>("取引先", [
+      { name: "list", shortcut: "l", message: "一覧", value: runClientsCommand },
+      { name: "create", shortcut: "n", message: "作成", value: runCreateClientCommand },
+      { name: BACK, shortcut: "b", message: "↩️ 戻る", value: BACK },
+    ]);
+
+    if (action === BACK) {
+      return;
+    }
+
+    await action(db);
   }
 }
 

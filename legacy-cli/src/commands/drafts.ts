@@ -6,7 +6,7 @@ import { listInvoices } from "../db/repositories.js";
 import { generateFromDraftPath } from "./generate.js";
 import { readInvoiceDraft } from "../invoice/schema.js";
 import { openInEditor } from "../utils/editor.js";
-import { listFiles } from "../utils/files.js";
+import { getFileMtimeMs, listFiles } from "../utils/files.js";
 import { confirm, select } from "../utils/prompts.js";
 
 const ANSI_DIM = "\x1b[2m";
@@ -18,6 +18,7 @@ type DraftChoice = {
   message: string;
   value: string;
   priority: number;
+  mtimeMs: number;
 };
 
 function dim(value: string): string {
@@ -53,6 +54,7 @@ async function buildDraftChoices(db: Database.Database, draftFiles: string[]): P
     draftFiles.map(async (file) => {
       const relativePath = path.relative(process.cwd(), file);
       const state = getSavedState(db, file);
+      const mtimeMs = await getFileMtimeMs(file);
       const statuses = [
         state.isSavedToSqlite ? "SQLite保存済み" : undefined,
         state.isSavedToDrive ? "Drive保存済み" : undefined,
@@ -72,11 +74,12 @@ async function buildDraftChoices(db: Database.Database, draftFiles: string[]): P
         message: state.priority > 0 ? dim(label) : label,
         value: file,
         priority: state.priority,
+        mtimeMs,
       };
     }),
   );
 
-  return choices.sort((a, b) => a.priority - b.priority || a.message.localeCompare(b.message, "ja"));
+  return choices.sort((a, b) => a.priority - b.priority || b.mtimeMs - a.mtimeMs);
 }
 
 async function selectDraft(db: Database.Database): Promise<string | undefined> {

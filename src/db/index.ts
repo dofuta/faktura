@@ -1,8 +1,20 @@
-import { getDb } from "./client.js";
-import { runMigrations } from "./migrations.js";
+import { mkdirSync } from "node:fs";
+import path from "node:path";
+import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/libsql";
+import * as schema from "./schema";
 
-export async function openDatabase() {
-  const db = await getDb();
-  runMigrations(db);
-  return db;
+const url = process.env.TURSO_DATABASE_URL ?? "file:data/dev.db";
+
+if (url.startsWith("file:")) {
+  mkdirSync(path.dirname(url.slice("file:".length)), { recursive: true });
 }
+
+const client = createClient({
+  url,
+  authToken: process.env.TURSO_AUTH_TOKEN,
+});
+
+export const db = drizzle(client, { schema });
+
+export { schema };

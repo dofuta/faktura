@@ -75,7 +75,7 @@ function mapInvoice(row: InvoiceRow): InvoiceRecord {
 
 export function listClients(db: Database.Database): Client[] {
   const rows = db
-    .prepare("SELECT * FROM clients ORDER BY name COLLATE NOCASE")
+    .prepare("SELECT * FROM clients ORDER BY datetime(created_at) DESC, id DESC")
     .all() as ClientRow[];
   return rows.map(mapClient);
 }

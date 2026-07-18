@@ -2,211 +2,74 @@
   <img src="assets/header.jpg" alt="faktura" width="100%" />
 </p>
 
-Node.js/TypeScript製の小さな請求書発行CLIです。
+請求書発行Webアプリです。自然言語から請求書ドラフトを作成し、フォームで編集・プレビューしたうえで発行(PDF生成)し、必要に応じてGoogle Driveへアップロードします。
 
-自然言語から請求書ドラフトを作成し、YAMLを確認・編集したうえでPDFを生成し、必要に応じてGoogle Driveへアップロードします。取引先、請求書、Google Drive URLはSQLiteで管理します。
+- Next.js (App Router) + shadcn/ui + Tailwind CSS
+- DB: Turso (libSQL) + Drizzle ORM。ローカル開発は `file:data/dev.db`
+- PDF: puppeteer-core + @sparticuz/chromium(HTMLプレビューとPDFが同一のテンプレート)
+- 請求書出力は日本語 / 英語対応(取引先の言語で切替)
+- 旧CLI版は `legacy-cli/` に退避(廃止)
 
 ## セットアップ
 
-Node.jsは `22.x` LTSを推奨します。`better-sqlite3` の都合で、Node.js `21.x` は非推奨です。
-
-ベータ版としてGitHubから直接インストールする場合は以下です。
+Node.js は `.node-version`(22.x)を使います。
 
 ```bash
-npm install -g git+ssh://git@github.com:dofuta/invoice-generator.git
-fak
+nodenv install 22.22.3   # 未導入の場合
+npm install
+cp .env.example .env.local
 ```
 
-ブランチを指定する場合:
+`.env.local` を設定します。
 
 ```bash
-npm install -g git+ssh://git@github.com:dofuta/invoice-generator.git#main
-fak
+AUTH_PASSWORD=ログインパスワード
+AUTH_SECRET=$(openssl rand -base64 32)
+ENCRYPTION_KEY=$(openssl rand -base64 32)
+# ローカル開発ではTURSO_*は不要(file:data/dev.dbを使用)
 ```
 
-`nodenv` を使っていて `fak: command not found` になる場合は、以下を実行してください。
+スキーマ適用とシード:
 
 ```bash
-nodenv rehash
+npm run db:push
+npm run db:seed
 ```
 
-PDF生成にはPlaywrightのChromiumが必要です。初回に以下を実行してください。
-
-```bash
-npx playwright install chromium
-```
-
-`browserType.launch: Executable doesn't exist` が出た場合も、同じコマンドを実行してください。
-
-## 保存場所
-
-設定とデータは、macOS/Linuxの標準的なアプリ用ディレクトリに保存します。正確なパスはCLIの `⚙️ 設定・保存場所` から確認できます。
-
-macOSの例:
-
-```text
-~/Library/Preferences/faktura/
-  .env
-  company.yml
-  google-oauth-client.json
-  google-oauth-token.json
-
-~/Library/Application Support/faktura/
-  invoices.db
-  drafts/
-  output/
-```
-
-Linuxの例:
-
-```text
-~/.config/faktura/
-  .env
-  company.yml
-  google-oauth-client.json
-  google-oauth-token.json
-
-~/.local/share/faktura/
-  invoices.db
-  drafts/
-  output/
-```
-
-設定フォルダの `company.yml` に自社情報と振込先を設定してください。
-
-`.env` には以下を設定します。
-
-```bash
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
-GOOGLE_AUTH_MODE=oauth
-GOOGLE_DRIVE_FOLDER_ID=
-PDF_PREVIEW_BROWSER=
-```
-
-`GOOGLE_OAUTH_CLIENT_PATH`、`DATABASE_PATH`、`COMPANY_CONFIG_PATH`、`DRAFTS_DIR`、`OUTPUT_DIR` などは通常不要です。指定しない場合は上記のOS標準ディレクトリを使います。プロジェクト内でファイルを見たい場合は `DRAFTS_DIR=./drafts`、`OUTPUT_DIR=./output` のように指定してください。
-
-## Google Drive連携
-
-Google Drive連携は任意です。未設定でもPDF生成とSQLite保存は使えます。未設定の場合、PDF生成時のGoogle Driveアップロード確認は表示されません。
-
-個人のGoogle Driveへアップロードする場合はOAuthを使います。
-
-1. [Google Cloud Console](https://console.cloud.google.com/) でプロジェクトを作成します。
-2. 「APIとサービス」から Google Drive API を有効化します。
-3. 「APIとサービス」→「OAuth同意画面」を設定します。個人利用ならテストユーザーに自分のGoogleアカウントを追加します。
-4. 「APIとサービス」→「認証情報」→「認証情報を作成」→「OAuthクライアントID」を選びます。
-5. アプリケーションの種類は「デスクトップアプリ」にします。
-6. ダウンロードしたJSONを設定フォルダの `google-oauth-client.json` に置きます。macOSの標準配置は `~/Library/Preferences/faktura/google-oauth-client.json` です。プロジェクト内に置きたい場合は `.env` に `GOOGLE_OAUTH_CLIENT_PATH=./config/google-oauth-client.json` を設定します。
-7. フォルダURLのID部分を `.env` の `GOOGLE_DRIVE_FOLDER_ID` に設定します。
-8. 初回アップロード時にブラウザが開くので、Google Driveへのアクセスを許可します。取得したトークンは設定フォルダの `google-oauth-token.json` に保存されます。
-
-フォルダURLが `https://drive.google.com/drive/folders/abc123...` の場合、`abc123...` がフォルダIDです。
-
-現在の設定状態はCLIの `⚙️ 設定・保存場所` から確認できます。
-
-共有ドライブでサービスアカウントを使う場合だけ、`.env` に `GOOGLE_AUTH_MODE=service_account` を設定してください。サービスアカウントJSONの標準配置は設定フォルダの `google-service-account.json` です。プロジェクト内に置きたい場合は `GOOGLE_APPLICATION_CREDENTIALS=./config/google-service-account.json` を設定してください。サービスアカウントは通常の個人My Driveには保存容量を持たないため、My Driveへの直接アップロードには向きません。
-
-## 自社情報
-
-`config/company.yml` には、PDFに表示する自社情報と振込先を設定します。
-
-```yaml
-name: Your Company
-postalCode: "000-0000"
-address: Tokyo, Japan
-email: billing@example.com
-phone: ""
-registrationNumber: ""
-invoiceNotes: |
-  ※振込日が土日祝日の場合には、その前の最終銀行営業日までにお振込ください。
-  ※恐れ入りますが振込手数料はお客様のご負担でお願いいたします。
-bank:
-  name: Sample Bank
-  branch: Main Branch
-  accountType: ordinary
-  accountNumber: "0000000"
-  accountHolder: Your Company
-```
-
-- `name`: 自社名
-- `postalCode`, `address`: 自社住所
-- `email`, `phone`: 連絡先
-- `registrationNumber`: 適格請求書発行事業者の登録番号。不要なら空で構いません。
-- `invoiceNotes`: 請求書の備考に毎回表示する固定文。複数行で書くとPDFでは改行が`<br />`として表示されます。
-- `bank`: 請求書に表示する振込先口座情報
-
-## 使い方
-
-通常は以下でCLIを起動します。
-
-```bash
-fak
-```
-
-起動後に、CLI上で「何をするか」を選択します。通常操作ではCLIを終了せず、各画面の `↩️ トップに戻る` でトップメニューへ戻ります。
-
-開発中は以下でも起動できます。
+起動:
 
 ```bash
 npm run dev
 ```
 
-## コマンド
+OpenAI APIキーとGoogle Driveは、アプリの「設定」画面から登録します(DBに暗号化保存。envではありません)。
+
+## 旧CLIからのデータ移行
 
 ```bash
-fak
+npm run db:migrate-from-cli -- [旧DBパス] [company.ymlパス]
+# デフォルト: data/invoices.db config/company.yml
 ```
 
-最初にアイコン付きのメニューが表示されます。
+取引先・請求書(発行済みとして)・明細・採番・会社情報を移行します。ローカルPDFが残っていればBLOBとして取り込みます。
 
-- `[D] 📋 請求書ドラフト一覧`: 設定済みのドラフト保存先にあるドラフトを選択し、生成・編集・削除を行います。
-- `[N] ✍️ 請求書ドラフトを作成する`: 取引先を検索選択し、請求内容を自然文で入力してドラフトYAMLを作成します。作成後はドラフト一覧に戻ります。
-- `[I] 🧾 請求書一覧`: SQLiteに保存済みの請求書を新しい順に表示し、プレビュー・Finderで表示・削除を行います。
-- `[C] 🏢 取引先一覧`: 取引先を選択し、CLI上でプレビュー・編集・削除を行います。請求書がある取引先は削除できません。
-- `[A] ➕ 取引先作成`: 新しい取引先を登録します。
-- `[S] ⚙️ 設定・保存場所`: OpenAI/Google Driveの設定状態と、DB・会社情報・ドラフト・出力先を確認し、各保存フォルダをFinderで開きます。
-- `[Q] 終了する`: CLIを終了します。
+## Vercelデプロイ
 
-各画面の戻る操作は `[B]` です。
+1. [Turso](https://turso.tech/) でDBを作成し、URLとトークンを取得
+2. Vercelに環境変数を設定: `AUTH_PASSWORD` / `AUTH_SECRET` / `ENCRYPTION_KEY` / `TURSO_DATABASE_URL` / `TURSO_AUTH_TOKEN`
+3. ローカルから本番DBへスキーマ適用: `TURSO_DATABASE_URL=... TURSO_AUTH_TOKEN=... npm run db:push && npm run db:seed`
+4. デプロイ
 
-ドラフト一覧では、`title` があれば件名を表示し、空の場合だけファイル名を表示します。`SQLite保存済み`、`Drive保存済み` のドラフトは下の方に薄く表示されます。
+## Google Drive連携(任意)
 
-請求書一覧では、新しいものが上に表示されます。Drive URLがあるものは `Drive保存済み`、ないものは `ローカルのみ` と表示します。
+`drive.file` スコープ(non-sensitive)のみ使うため、Googleの審査は不要です。
 
-PDFファイル名は `INVOICE_YYYYMMDD_クライアント名.pdf` です。取引先の言語が日本語の場合は、クライアント名の末尾に `様` を付けます。英語の場合は付けません。
+1. [Google Cloud Console](https://console.cloud.google.com/) でGoogle Drive APIを有効化
+2. OAuthクライアントを「ウェブアプリケーション」で作成し、リダイレクトURIに `https://<デプロイ先>/api/google/callback`(ローカルは `http://localhost:3000/api/google/callback`)を登録
+3. OAuth同意画面を**本番公開**する(テストモードのままだとrefresh tokenが7日で失効します)
+4. アプリの「設定」画面にクライアントID/シークレットを保存し、「Driveを接続」
 
-PDF生成後は `file://` のプレビューURLを表示し、確認に答えるとブラウザ/既定アプリで開きます。ブラウザを指定したい場合は `.env` に設定します。
-
-```bash
-PDF_PREVIEW_BROWSER="Google Chrome"
-```
-
-ドラフト例:
-
-```yaml
-client:
-  id: 1
-  name: 株式会社サンプル
-  language: ja
-title: Webサイト制作費
-issueDate: 2026-04-27
-dueDate: 2026-05-31
-items:
-  - description: Webサイト制作
-    unitPrice: 100000
-    quantity: 1
-    taxRate: 0.1
-notes: ""
-```
-
-## ファイル配置
-
-- 設定フォルダの `company.yml`: 自社情報と振込先
-- データフォルダの `invoices.db`: SQLiteデータベース
-- データフォルダの `drafts/`: 請求書ドラフト
-- データフォルダの `output/`: 生成PDF
-- npm package内の `templates/invoice.html.hbs`: 請求書HTMLテンプレート
+アップロード先は、アプリが自動作成するMy Drive内の `faktura` フォルダです。
 
 ## 確認
 

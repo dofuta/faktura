@@ -1,4 +1,4 @@
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 export async function ensureDir(dirPath: string): Promise<void> {
@@ -12,6 +12,10 @@ export async function writeTextFile(filePath: string, content: string): Promise<
 
 export async function readTextFile(filePath: string): Promise<string> {
   return readFile(filePath, "utf8");
+}
+
+export async function getFileMtimeMs(filePath: string): Promise<number> {
+  return (await stat(filePath)).mtimeMs;
 }
 
 export async function listFiles(dirPath: string, extensions: string[]): Promise<string[]> {
