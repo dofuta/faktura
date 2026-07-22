@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatYen } from "@/invoice/totals";
-import { downloadFileFromResponse } from "@/lib/download";
 import { deleteInvoiceAction } from "../actions";
+import { DocumentExportRow } from "./document-export-row";
 
 type IssuedInvoice = {
   id: number;
@@ -24,21 +24,6 @@ type IssuedInvoice = {
 export function IssuedInvoiceView({ invoice }: { invoice: IssuedInvoice }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [quoting, setQuoting] = useState(false);
-
-  const downloadQuotation = async () => {
-    setQuoting(true);
-    const response = await fetch(`/api/invoices/${invoice.id}/quotation-pdf`, {
-      method: "POST",
-    });
-    setQuoting(false);
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      toast.error(body.error ?? "見積書PDFの生成に失敗しました");
-      return;
-    }
-    await downloadFileFromResponse(response);
-  };
 
   const remove = async () => {
     if (
@@ -91,9 +76,6 @@ export function IssuedInvoiceView({ invoice }: { invoice: IssuedInvoice }) {
           >
             PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={downloadQuotation} disabled={quoting}>
-            {quoting ? "生成中..." : "見積書PDF"}
-          </Button>
           <Button variant="outline" size="sm" onClick={remove} disabled={busy}>
             削除
           </Button>
@@ -104,6 +86,11 @@ export function IssuedInvoiceView({ invoice }: { invoice: IssuedInvoice }) {
         {invoice.clientName} ・ 発行日 {invoice.issueDate}
         {invoice.dueDate ? ` ・ 支払期限 ${invoice.dueDate}` : ""} ・{" "}
         {invoice.total !== null ? formatYen(invoice.total, invoice.clientLanguage) : ""}
+      </div>
+
+      <div className="flex flex-wrap gap-4 rounded-md border p-3">
+        <DocumentExportRow invoiceId={invoice.id} documentType="quotation" />
+        <DocumentExportRow invoiceId={invoice.id} documentType="delivery" />
       </div>
 
       <iframe
