@@ -1,5 +1,6 @@
 import { and, eq, isNotNull } from "drizzle-orm";
 import { db, schema } from "@/db";
+import { buildPdfFileName } from "@/invoice/filename";
 import { renderInvoiceHtml } from "@/invoice/render";
 import { calculateTotals } from "@/invoice/totals";
 import { TENANT_ID } from "@/lib/tenant";
@@ -8,26 +9,6 @@ import { getDriveStatus, uploadPdfToDrive } from "./google";
 import { getInvoiceDetail } from "./invoices";
 import { reserveInvoiceNumber } from "./numbering";
 import { renderPdfFromHtml } from "./pdf";
-
-function sanitizeFileNamePart(value: string): string {
-  return value
-    .trim()
-    .replace(/[\\/:*?"<>|]/g, "_")
-    .replace(/\s+/g, "_")
-    .replace(/_+/g, "_");
-}
-
-export function buildPdfFileName(
-  issueDate: string,
-  clientName: string,
-  language: "ja" | "en",
-): string {
-  const compactIssueDate = issueDate.replaceAll("-", "");
-  const displayName =
-    language === "ja" && !clientName.endsWith("様") ? `${clientName}様` : clientName;
-  const safeName = sanitizeFileNamePart(displayName) || "client";
-  return `INVOICE_${compactIssueDate}_${safeName}.pdf`;
-}
 
 async function invoiceNumberExists(invoiceNumber: string): Promise<boolean> {
   const rows = await db

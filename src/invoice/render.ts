@@ -1,6 +1,8 @@
 import Handlebars from "handlebars";
-import { invoiceLabels, type InvoiceLanguage } from "./labels";
+import { getInvoiceLabels, type DocumentType, type InvoiceLanguage } from "./labels";
 import { calculateTotals, formatYen, type InvoiceItemInput } from "./totals";
+
+export type { DocumentType };
 
 export type CompanySnapshot = {
   name: string;
@@ -21,6 +23,7 @@ export type CompanySnapshot = {
 
 export type InvoiceRenderInput = {
   invoiceNumber: string | null;
+  documentType?: DocumentType;
   language: InvoiceLanguage;
   company: CompanySnapshot;
   client: { name: string; address: string; email: string };
@@ -164,7 +167,7 @@ const template = `<!doctype html>
       </div>
       <div class="box right">
         <p>
-          {{labels.invoiceNumber}}: {{invoiceNumber}}<br />
+          {{#if invoiceNumber}}{{labels.invoiceNumber}}: {{invoiceNumber}}<br />{{/if}}
           {{labels.issueDate}}: {{issueDate}}{{#if dueDate}}<br />
           {{labels.dueDate}}: {{dueDate}}{{/if}}
         </p>
@@ -273,13 +276,15 @@ Handlebars.registerHelper("lineBreaks", (value: string) => {
 const compiled = Handlebars.compile(template);
 
 export function renderInvoiceHtml(input: InvoiceRenderInput): string {
-  const labels = invoiceLabels[input.language];
+  const documentType = input.documentType ?? "invoice";
+  const labels = getInvoiceLabels(input.language, documentType);
   const totals = calculateTotals(input.items);
 
   return compiled({
     lang: input.language,
     labels,
-    invoiceNumber: input.invoiceNumber ?? labels.draft,
+    // 見積書・納品書は保存しない=番号を持たないため、下書き表記は請求書のみ
+    invoiceNumber: input.invoiceNumber ?? (documentType === "invoice" ? labels.draft : null),
     company: input.company,
     client: input.client,
     title: input.title,

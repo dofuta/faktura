@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
+import { buildPdfFileName } from "@/invoice/filename";
 import { getInvoiceDetail } from "@/server/invoices";
-import { buildPdfFileName } from "@/server/issue";
 
 export const dynamic = "force-dynamic";
 

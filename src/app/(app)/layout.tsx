@@ -21,6 +21,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             請求書
           </Link>
           <Link
+            href="/documents"
+            className="text-sm text-muted-foreground hover:text-foreground"
+          >
+            見積書・納品書
+          </Link>
+          <Link
             href="/clients"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
