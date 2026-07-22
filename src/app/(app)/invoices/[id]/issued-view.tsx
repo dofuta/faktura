@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatYen } from "@/invoice/totals";
+import { downloadFileFromResponse } from "@/lib/download";
 import { deleteInvoiceAction } from "../actions";
 
 type IssuedInvoice = {
@@ -23,6 +24,21 @@ type IssuedInvoice = {
 export function IssuedInvoiceView({ invoice }: { invoice: IssuedInvoice }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const [quoting, setQuoting] = useState(false);
+
+  const downloadQuotation = async () => {
+    setQuoting(true);
+    const response = await fetch(`/api/invoices/${invoice.id}/quotation-pdf`, {
+      method: "POST",
+    });
+    setQuoting(false);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      toast.error(body.error ?? "見積書PDFの生成に失敗しました");
+      return;
+    }
+    await downloadFileFromResponse(response);
+  };
 
   const remove = async () => {
     if (
@@ -74,6 +90,9 @@ export function IssuedInvoiceView({ invoice }: { invoice: IssuedInvoice }) {
             }
           >
             PDF
+          </Button>
+          <Button variant="outline" size="sm" onClick={downloadQuotation} disabled={quoting}>
+            {quoting ? "生成中..." : "見積書PDF"}
           </Button>
           <Button variant="outline" size="sm" onClick={remove} disabled={busy}>
             削除

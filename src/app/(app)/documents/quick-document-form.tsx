@@ -1,6 +1,6 @@
 "use client";
 
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,8 +15,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { QuickDocumentFormValues, QuickDocumentType } from "@/invoice/documentFormSchema";
+import type { QuickDocumentFormValues } from "@/invoice/documentFormSchema";
 import { calculateTotals, formatYen } from "@/invoice/totals";
+import { downloadFileFromResponse } from "@/lib/download";
 
 const TAX_RATES = [
   { value: "0.1", label: "10%" },
@@ -24,29 +25,11 @@ const TAX_RATES = [
   { value: "0", label: "0%" },
 ];
 
-const DOCUMENT_TYPES: { value: QuickDocumentType; label: string }[] = [
-  { value: "quotation", label: "見積書" },
-  { value: "delivery", label: "納品書" },
-];
-
-const SECOND_DATE_LABEL: Record<QuickDocumentType, string> = {
-  quotation: "有効期限",
-  delivery: "納品日",
-};
-
-function defaultSecondDate(documentType: QuickDocumentType, issueDate: string): string {
-  const base = issueDate ? new Date(issueDate) : new Date();
-  return documentType === "quotation"
-    ? format(addDays(base, 30), "yyyy-MM-dd")
-    : issueDate;
-}
-
 export function QuickDocumentForm({ clients }: { clients: { id: number; name: string }[] }) {
-  const [documentType, setDocumentType] = useState<QuickDocumentType>("quotation");
   const [clientId, setClientId] = useState<string>("");
   const [title, setTitle] = useState("");
   const [issueDate, setIssueDate] = useState(format(new Date(), "yyyy-MM-dd"));
-  const [secondDate, setSecondDate] = useState(defaultSecondDate("quotation", format(new Date(), "yyyy-MM-dd")));
+  const [secondDate, setSecondDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<QuickDocumentFormValues["items"]>([
     { description: "", unitPrice: 0, quantity: 1, taxRate: 0.1 },
@@ -56,17 +39,11 @@ export function QuickDocumentForm({ clients }: { clients: { id: number; name: st
 
   const totals = calculateTotals(items);
 
-  const changeDocumentType = (value: QuickDocumentType) => {
-    setDocumentType(value);
-    setSecondDate(defaultSecondDate(value, issueDate));
-  };
-
   const setItem = (index: number, patch: Partial<QuickDocumentFormValues["items"][number]>) => {
     setItems(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
   };
 
   const buildPayload = (): QuickDocumentFormValues => ({
-    documentType,
     clientId: Number(clientId),
     title,
     issueDate,
@@ -104,7 +81,7 @@ export function QuickDocumentForm({ clients }: { clients: { id: number; name: st
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documentType, clientId, title, issueDate, secondDate, notes, items]);
+  }, [clientId, title, issueDate, secondDate, notes, items]);
 
   const download = async () => {
     if (!clientId) {
@@ -126,47 +103,17 @@ export function QuickDocumentForm({ clients }: { clients: { id: number; name: st
       return;
     }
 
-    const blob = await response.blob();
-    const disposition = response.headers.get("Content-Disposition") ?? "";
-    const match = disposition.match(/filename\*=UTF-8''(.+)$/);
-    const fileName = match ? decodeURIComponent(match[1]) : "document.pdf";
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.click();
-    URL.revokeObjectURL(url);
+    await downloadFileFromResponse(response);
   };
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold">見積書・納品書を作成</h1>
+          <h1 className="text-lg font-semibold">納品書を作成</h1>
           <Button size="sm" onClick={download} disabled={downloading || !clientId}>
             {downloading ? "生成中..." : "PDFダウンロード"}
           </Button>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>書類種別</Label>
-          <Select
-            items={Object.fromEntries(DOCUMENT_TYPES.map((t) => [t.value, t.label]))}
-            value={documentType}
-            onValueChange={(v) => changeDocumentType(v as QuickDocumentType)}
-          >
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DOCUMENT_TYPES.map((t) => (
-                <SelectItem key={t.value} value={t.value}>
-                  {t.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="space-y-1.5">
@@ -212,7 +159,7 @@ export function QuickDocumentForm({ clients }: { clients: { id: number; name: st
             />
           </div>
           <div className="space-y-1.5">
-            <Label>{SECOND_DATE_LABEL[documentType]}</Label>
+            <Label>納品日</Label>
             <Input
               type="date"
               value={secondDate}

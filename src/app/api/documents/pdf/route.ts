@@ -8,8 +8,6 @@ import { renderPdfFromHtml } from "@/server/pdf";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const FILENAME_PREFIX = { quotation: "QUOTATION", delivery: "DELIVERY" } as const;
-
 export async function POST(request: Request) {
   const parsed = quickDocumentFormSchema.safeParse(await request.json());
   if (!parsed.success) {
@@ -24,7 +22,7 @@ export async function POST(request: Request) {
       parsed.data.issueDate,
       renderInput.client.name,
       renderInput.language,
-      FILENAME_PREFIX[parsed.data.documentType],
+      "DELIVERY",
     );
 
     return new Response(new Uint8Array(pdf), {

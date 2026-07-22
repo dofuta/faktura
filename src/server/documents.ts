@@ -15,7 +15,7 @@ export async function buildQuickDocumentRenderInput(
 
   return {
     invoiceNumber: null,
-    documentType: input.documentType,
+    documentType: "delivery",
     language: client.language,
     company,
     client: { name: client.name, address: client.address, email: client.email },

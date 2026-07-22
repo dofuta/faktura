@@ -16,6 +16,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import type { InvoiceFormValues } from "@/invoice/formSchema";
 import { calculateTotals, formatYen } from "@/invoice/totals";
+import { downloadFileFromResponse } from "@/lib/download";
 import { deleteInvoiceAction, issueInvoiceAction, updateDraftAction } from "../actions";
 
 const TAX_RATES = [
@@ -36,6 +37,7 @@ export function InvoiceEditor({
   const router = useRouter();
   const [values, setValues] = useState<InvoiceFormValues>(initial);
   const [busy, setBusy] = useState(false);
+  const [quoting, setQuoting] = useState(false);
   const [previewVersion, setPreviewVersion] = useState(0);
 
   const totals = calculateTotals(values.items);
@@ -84,6 +86,23 @@ export function InvoiceEditor({
     router.refresh();
   };
 
+  const downloadQuotation = async () => {
+    if (!(await save())) {
+      return;
+    }
+    setQuoting(true);
+    const response = await fetch(`/api/invoices/${invoiceId}/quotation-pdf`, {
+      method: "POST",
+    });
+    setQuoting(false);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      toast.error(body.error ?? "見積書PDFの生成に失敗しました");
+      return;
+    }
+    await downloadFileFromResponse(response);
+  };
+
   const remove = async () => {
     if (!confirm("このドラフトを削除しますか?")) {
       return;
@@ -106,6 +125,9 @@ export function InvoiceEditor({
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={remove} disabled={busy}>
               削除
+            </Button>
+            <Button variant="outline" size="sm" onClick={downloadQuotation} disabled={busy || quoting}>
+              {quoting ? "生成中..." : "見積書PDF"}
             </Button>
             <Button
               variant="outline"
