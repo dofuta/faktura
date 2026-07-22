@@ -5,6 +5,8 @@ import { InvoiceEditor } from "./invoice-editor";
 import { IssuedInvoiceView } from "./issued-view";
 
 export const dynamic = "force-dynamic";
+// 発行(Chromium起動+PDF生成+Driveアップロード)がこのページのserver actionで走る
+export const maxDuration = 60;
 
 export default async function InvoicePage({
   params,
