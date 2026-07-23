@@ -4,14 +4,16 @@ import { calculateTotals, formatYen, type InvoiceItemInput } from "./totals";
 
 export type { DocumentType };
 
-export type CompanySnapshot = {
+// 文書種別・言語で解決済みの、表示用の単一言語スナップショット。
+// 見積書・納品書では bank は空値になる(resolveCompanyForRenderが決定)。
+export type CompanyDisplay = {
   name: string;
   postalCode: string;
   address: string;
   email: string;
   phone: string;
   registrationNumber: string;
-  invoiceNotes: string;
+  fixedNotes: string;
   bank: {
     name: string;
     branch: string;
@@ -25,7 +27,7 @@ export type InvoiceRenderInput = {
   invoiceNumber: string | null;
   documentType?: DocumentType;
   language: InvoiceLanguage;
-  company: CompanySnapshot;
+  company: CompanyDisplay;
   client: { name: string; address: string; email: string };
   title: string;
   issueDate: string;
@@ -255,8 +257,8 @@ const template = `<!doctype html>
         <p><strong>{{labels.notes}}</strong><br />{{lineBreaks notes}}</p>
       {{/if}}
 
-      {{#if company.invoiceNotes}}
-        <p>{{lineBreaks company.invoiceNotes}}</p>
+      {{#if company.fixedNotes}}
+        <p>{{lineBreaks company.fixedNotes}}</p>
       {{/if}}
     </div>
   </body>

@@ -1,9 +1,14 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { db, schema } from "@/db";
-import type { CompanySnapshot, InvoiceRenderInput } from "@/invoice/render";
+import type { InvoiceRenderInput } from "@/invoice/render";
 import { calculateTotals, type InvoiceItemInput } from "@/invoice/totals";
 import { TENANT_ID } from "@/lib/tenant";
-import { getCompanyProfile, toCompanySnapshot } from "./company";
+import {
+  type CompanyProfileBilingual,
+  getCompanyProfile,
+  resolveCompanyForRender,
+  toCompanySnapshot,
+} from "./company";
 
 export type InvoiceDraftData = {
   clientId: number;
@@ -126,15 +131,15 @@ export async function buildRenderInput(id: number): Promise<InvoiceRenderInput |
 
   const { invoice, client, items } = detail;
 
-  const company: CompanySnapshot =
+  const companySnapshot: CompanyProfileBilingual =
     invoice.status === "issued" && invoice.companySnapshot
-      ? (JSON.parse(invoice.companySnapshot) as CompanySnapshot)
+      ? (JSON.parse(invoice.companySnapshot) as CompanyProfileBilingual)
       : toCompanySnapshot(await getCompanyProfile());
 
   return {
     invoiceNumber: invoice.invoiceNumber,
     language: client.language,
-    company,
+    company: resolveCompanyForRender(companySnapshot, client.language, "invoice"),
     client: { name: client.name, address: client.address, email: client.email },
     title: invoice.title,
     issueDate: invoice.issueDate,

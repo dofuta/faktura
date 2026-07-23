@@ -4,7 +4,7 @@ import { buildPdfFileName } from "@/invoice/filename";
 import { renderInvoiceHtml } from "@/invoice/render";
 import { calculateTotals } from "@/invoice/totals";
 import { TENANT_ID } from "@/lib/tenant";
-import { getCompanyProfile, toCompanySnapshot } from "./company";
+import { getCompanyProfile, resolveCompanyForRender, toCompanySnapshot } from "./company";
 import { getDriveStatus, uploadPdfToDrive } from "./google";
 import { getInvoiceDetail } from "./invoices";
 import { reserveInvoiceNumber } from "./numbering";
@@ -48,7 +48,7 @@ export async function issueInvoice(id: number): Promise<IssueResult> {
     invoiceNumber = await reserveInvoiceNumber(new Date(invoice.issueDate));
   }
 
-  const company = toCompanySnapshot(await getCompanyProfile());
+  const companySnapshot = toCompanySnapshot(await getCompanyProfile());
   const itemInputs = items.map((item) => ({
     description: item.description,
     unitPrice: item.unitPrice,
@@ -60,7 +60,7 @@ export async function issueInvoice(id: number): Promise<IssueResult> {
   const html = renderInvoiceHtml({
     invoiceNumber,
     language: client.language,
-    company,
+    company: resolveCompanyForRender(companySnapshot, client.language, "invoice"),
     client: { name: client.name, address: client.address, email: client.email },
     title: invoice.title,
     issueDate: invoice.issueDate,
@@ -97,7 +97,7 @@ export async function issueInvoice(id: number): Promise<IssueResult> {
       subtotal: totals.subtotal,
       taxAmount: totals.taxAmount,
       total: totals.total,
-      companySnapshot: JSON.stringify(company),
+      companySnapshot: JSON.stringify(companySnapshot),
       pdf,
       driveFileId: driveFileId ?? null,
       driveUrl: driveUrl ?? null,

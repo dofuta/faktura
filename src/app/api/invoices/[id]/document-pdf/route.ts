@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { buildPdfFileName } from "@/invoice/filename";
 import { renderInvoiceHtml } from "@/invoice/render";
-import { getCompanyProfile, toCompanySnapshot } from "@/server/company";
+import { getCompanyProfile, resolveCompanyForRender, toCompanySnapshot } from "@/server/company";
 import { getInvoiceDetail } from "@/server/invoices";
 import { renderPdfFromHtml } from "@/server/pdf";
 
@@ -36,7 +36,12 @@ export async function POST(
   }
 
   const { invoice, client, items } = detail;
-  const company = toCompanySnapshot(await getCompanyProfile());
+  const companySnapshot = toCompanySnapshot(await getCompanyProfile());
+  const company = resolveCompanyForRender(
+    companySnapshot,
+    client.language,
+    parsed.data.documentType,
+  );
 
   const html = renderInvoiceHtml({
     invoiceNumber: null,

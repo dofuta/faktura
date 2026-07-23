@@ -21,17 +21,36 @@ export const companyProfiles = sqliteTable("company_profiles", {
     .primaryKey()
     .references(() => tenants.id),
   name: text("name").notNull().default(""),
+  nameEn: text("name_en").notNull().default(""),
   postalCode: text("postal_code").notNull().default(""),
   address: text("address").notNull().default(""),
+  addressEn: text("address_en").notNull().default(""),
   email: text("email").notNull().default(""),
   phone: text("phone").notNull().default(""),
   registrationNumber: text("registration_number").notNull().default(""),
   invoiceNotes: text("invoice_notes").notNull().default(""),
+  invoiceNotesEn: text("invoice_notes_en").notNull().default(""),
+  quotationNotes: text("quotation_notes")
+    .notNull()
+    .default("上記のとおり、見積り申し上げます。"),
+  quotationNotesEn: text("quotation_notes_en")
+    .notNull()
+    .default("As stated above, we hereby submit our quotation."),
+  deliveryNotes: text("delivery_notes")
+    .notNull()
+    .default("上記のとおり、納品いたします。"),
+  deliveryNotesEn: text("delivery_notes_en")
+    .notNull()
+    .default("As stated above, we hereby confirm delivery."),
   bankName: text("bank_name").notNull().default(""),
+  bankNameEn: text("bank_name_en").notNull().default(""),
   bankBranch: text("bank_branch").notNull().default(""),
+  bankBranchEn: text("bank_branch_en").notNull().default(""),
   bankAccountType: text("bank_account_type").notNull().default(""),
+  bankAccountTypeEn: text("bank_account_type_en").notNull().default(""),
   bankAccountNumber: text("bank_account_number").notNull().default(""),
   bankAccountHolder: text("bank_account_holder").notNull().default(""),
+  bankAccountHolderEn: text("bank_account_holder_en").notNull().default(""),
 });
 
 export const settings = sqliteTable(

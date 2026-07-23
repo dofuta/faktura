@@ -11,17 +11,28 @@ import { getCompanyProfile } from "@/server/company";
 
 const companySchema = z.object({
   name: z.string(),
+  nameEn: z.string(),
   postalCode: z.string(),
   address: z.string(),
+  addressEn: z.string(),
   email: z.string(),
   phone: z.string(),
   registrationNumber: z.string(),
   invoiceNotes: z.string(),
+  invoiceNotesEn: z.string(),
+  quotationNotes: z.string(),
+  quotationNotesEn: z.string(),
+  deliveryNotes: z.string(),
+  deliveryNotesEn: z.string(),
   bankName: z.string(),
+  bankNameEn: z.string(),
   bankBranch: z.string(),
+  bankBranchEn: z.string(),
   bankAccountType: z.string(),
+  bankAccountTypeEn: z.string(),
   bankAccountNumber: z.string(),
   bankAccountHolder: z.string(),
+  bankAccountHolderEn: z.string(),
 });
 
 export type CompanyFormValues = z.infer<typeof companySchema>;
